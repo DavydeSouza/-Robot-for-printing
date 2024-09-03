@@ -2,7 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import pandas as pd
 import time
-from config import obter_ips_do_banco  # Importando a função do arquivo de banco de dados
+from config import executar_stored_procedure, obter_ips_do_banco  # Importando a função do arquivo de banco de dados
+import pyodbc  # Para conexão com o banco de dados SQL Server
 
 def abrir_navegador(url):
     driver = webdriver.Chrome()  # Certifique-se de que o chromedriver esteja instalado e no PATH
@@ -53,6 +54,8 @@ def coletar_dados(driver):
     except Exception as e:
         print(f"Erro ao coletar os dados: {e}")
 
+
+
 def iniciar_automacao():
     senha = 'initpass'
     
@@ -63,6 +66,9 @@ def iniciar_automacao():
         print(f"Iniciando automação para o IP: {ip}")
         login_url = f"http://{ip}"  # Construir a URL com base no IP
         
+        # Executar a stored procedure antes de iniciar o processo
+        
+
         # Abrir o navegador e fazer login
         driver = abrir_navegador(login_url)
         fazer_login(driver, senha)
@@ -71,6 +77,7 @@ def iniciar_automacao():
         acessar_pagina_admin(driver)
         acessar_pagina_controle(driver)
         coletar_dados(driver)
+        executar_stored_procedure(id_imp=1)
         
         # Fechar o navegador
         driver.quit()
