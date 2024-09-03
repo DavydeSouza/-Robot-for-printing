@@ -64,8 +64,8 @@ def coletar_dados(driver):
         print(f"Erro ao coletar os dados: {e}")
 
 def iniciar_automacao():
-    login_url = '#'
-    senha = '#'
+    login_url = 'http://10.10.13.39/'
+    senha = 'initpass'
     
     # Abrir o navegador e fazer login
     driver = abrir_navegador(login_url)

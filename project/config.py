@@ -3,10 +3,10 @@ import pyodbc
 # Passo 1: Estabeleça a conexão com o banco de dados
 conn_str = (
     'DRIVER={SQL Server};'
-    'SERVER=#;'  # Remova as barras e deixe apenas o endereço IP
+    'SERVER=10.10.13.250;'  # Remova as barras e deixe apenas o endereço IP
     'DATABASE=Impressora;'
-    'UID=#;'
-    'PWD=#'
+    'UID=netazzurra;'
+    'PWD=Azzurra@@2023'
 )
 
 try:
