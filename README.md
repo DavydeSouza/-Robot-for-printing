@@ -3,4 +3,23 @@ Este robô de impressão automatizado nas impressoras Brother, desenvolvido em P
 
 # Exemplo de ultilização 
 
+```Python 
+def iniciar_automacao():
+    login_url = 'Ip da Impressora Brother'
+    senha = 'Senha padrão do login registrado pela sua empresa'
+    
+    # Abrir o navegador e fazer login
+    driver = abrir_navegador(login_url)
+    fazer_login(driver, senha)
+    
+    # Acessar as páginas necessárias e coletar os dados
+    acessar_pagina_admin(driver)
+    acessar_pagina_controle(driver)
+    coletar_dados(driver)
+    
+    # Fechar o navegador
+    driver.quit()
+
+# Iniciar o processo de automação
+iniciar_automacao()
 
