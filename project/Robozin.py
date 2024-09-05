@@ -1,7 +1,11 @@
+import tkinter as tk
+from tkinter import messagebox, Canvas
+from tkinter import ttk
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import pandas as pd
 import time
+from PIL import Image, ImageTk
 from config import executar_stored_procedure, obter_ips_do_banco  # Importando a função do arquivo de banco de dados
 import pyodbc  # Para conexão com o banco de dados SQL Server
 
@@ -14,7 +18,6 @@ def abrir_navegador(url):
 def fazer_login(driver, senha):
     senha_campo = driver.find_element(By.ID, "LogBox")
     senha_campo.send_keys(senha)
-    
     driver.find_element(By.ID, "login").click()
     time.sleep(5)  # Aguarde a autenticação
 
@@ -28,7 +31,7 @@ def acessar_pagina_controle(driver):
     controle_link.click()
     time.sleep(5)
 
-def coletar_dados(driver):
+def coletar_dados(driver, qt):
     try:
         tabela = driver.find_element(By.ID, "lock")
         linhas = tabela.find_elements(By.CSS_SELECTOR, "tbody tr")
@@ -47,28 +50,35 @@ def coletar_dados(driver):
             except Exception as e:
                 print(f"Erro ao processar linha: {e}")
         
+        # Gerar nome de arquivo com base no contador 'qt'
+        nome_arquivo = f"dados_completos_{qt}.xlsx"
         df = pd.DataFrame(dados, columns=["ID", "Nome", "Paginas Disponiveis", "Qtd Impressa"])
-        df.to_excel("dados_completos.xlsx", index=False)
-        print("Dados salvos em 'dados_completos.xlsx'.")
+        
+        # Salvar os dados no arquivo Excel com o nome gerado
+        df.to_excel(nome_arquivo, index=False)
+        print(f"Dados salvos em '{nome_arquivo}'.")
         
     except Exception as e:
         print(f"Erro ao coletar os dados: {e}")
 
-
-
-def iniciar_automacao():
+def iniciar_automacao(botao, progress_var):
+    botao.config(text="Processando...", state="disabled")
+    progress_var.set(10)  # Atualizar a barra de progresso (simulação)
+    
     senha = 'initpass'
     
     # Obter os IPs do banco de dados
     ips = obter_ips_do_banco()
     
-    for ip in ips:
+    # Inicializar o contador
+    qt = 1
+    
+    index = 0
+    while index < len(ips):
+        ip = ips[index]
         print(f"Iniciando automação para o IP: {ip}")
         login_url = f"http://{ip}"  # Construir a URL com base no IP
         
-        # Executar a stored procedure antes de iniciar o processo
-        
-
         # Abrir o navegador e fazer login
         driver = abrir_navegador(login_url)
         fazer_login(driver, senha)
@@ -76,11 +86,60 @@ def iniciar_automacao():
         # Acessar as páginas necessárias e coletar os dados
         acessar_pagina_admin(driver)
         acessar_pagina_controle(driver)
-        coletar_dados(driver)
-        executar_stored_procedure(id_imp=1)
+        coletar_dados(driver, qt)  # Passar o contador 'qt' para nomear o arquivo Excel
+        
+        # Executar a stored procedure após coletar os dados
+        executar_stored_procedure(ip)
         
         # Fechar o navegador
         driver.quit()
+        
+        # Incrementar o índice e o contador
+        index += 1
+        qt += 1  # Incrementar o contador para o próximo arquivo ter um nome diferente
+        progress_var.set(100 * (index / len(ips)))  # Atualizar a barra de progresso
+    
+    # Mostrar mensagem de conclusão
+    messagebox.showinfo("Concluído", "Automação finalizada com sucesso!")
+    botao.config(text="Iniciar Automação", state="normal")
+    progress_var.set(0)
 
-# Iniciar o processo de automação
-iniciar_automacao()
+def iniciar_botao(botao, progress_var):
+    try:
+        iniciar_automacao(botao, progress_var)
+    except Exception as e:
+        messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
+        botao.config(text="Iniciar Automação", state="normal")
+
+# Criar a interface gráfica com tkinter
+root = tk.Tk()
+root.title("Automação Impressora")
+
+# Configurar o tamanho da janela e impedir o redimensionamento
+root.geometry("400x300")
+root.resizable(False, False)
+
+# Carregar a imagem de fundo
+imagem_fundo = Image.open(r"C:/Users/Davy/Downloads/ImpZin.png")  # Certifique-se que o caminho da imagem está correto
+imagem_fundo = imagem_fundo.resize((400, 300), Image.LANCZOS) # Redimensionar a imagem para 400x300
+imagem_fundo = ImageTk.PhotoImage(imagem_fundo)
+
+# Criar um canvas onde a imagem de fundo será desenhada
+canvas = Canvas(root, width=400, height=300)
+canvas.pack(fill="both", expand=True)
+
+# Adicionar a imagem de fundo ao canvas
+canvas.create_image(0, 0, anchor="nw", image=imagem_fundo)
+
+# Variável para a barra de progresso
+progress_var = tk.DoubleVar()
+
+
+# Criar o botão "Iniciar Automação" sobre o canvas
+botao_iniciar = ttk.Button(root, text="Iniciar Automação", command=lambda: iniciar_botao(botao_iniciar, progress_var), width=20)
+
+# Adicionar o botão ao canvas em uma posição visível
+canvas.create_window(200, 250, anchor="center", window=botao_iniciar)
+
+# Executar o loop principal do tkinter
+root.mainloop()
