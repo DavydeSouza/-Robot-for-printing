@@ -69,3 +69,26 @@ def executar_stored_procedure(id_imp):
                 print(f"Stored procedure executada com sucesso para ID = {id_imp}")
     except pyodbc.Error as e:
         print(f"Erro ao executar a stored procedure: {e}")
+        
+
+def obter_tipo_impressora_por_ip(ip):
+    try:
+        # Conectar ao banco de dados
+        conn = pyodbc.connect(
+            'DRIVER={SQL Server};SERVER=10.10.13.250;DATABASE=Impressora;UID=netazzurra;PWD=Azzurra@@2023'
+        )
+        cursor = conn.cursor()
+
+        # Consultar a tabela 'Impressora' para obter o tipo da impressora
+        cursor.execute("SELECT tipo FROM Impressora WHERE ipImp = ?", (ip,))
+        resultado = cursor.fetchone()
+
+        conn.close()
+
+        if resultado:
+            return resultado[0]  # Retorna 'multifuncional' ou 'funcional'
+        else:
+            return None  # Tipo não encontrado
+    except Exception as e:
+        print(f"Erro ao obter o tipo da impressora: {e}")
+        return None
