@@ -10,6 +10,10 @@ from config import executar_stored_procedure, obter_ips_do_banco, obter_setor_po
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+dados_acumulados = []
+
+
 def abrir_navegador(url):
     try:
         driver = webdriver.Chrome()  # Certifique-se de que o chromedriver esteja instalado e no PATH
@@ -39,7 +43,6 @@ def acessar_pagina_controle(driver):
 
 def coletar_dados(driver, qt, setor, tipo_impressora):
     try:
-        dados = []
         wait = WebDriverWait(driver, 10)  # Espera de até 10 segundos
 
         if tipo_impressora == 'Multifuncional':
@@ -58,8 +61,8 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
                     if lock_name == "":
                         continue
 
-                    # Adiciona os dados coletados à lista
-                    dados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
+                    # Adiciona os dados coletados à lista global
+                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
                 except Exception as e:
                     print(f"Erro ao processar linha: {e}")
         
@@ -78,18 +81,22 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
                     if lock_name == "":
                         continue
 
-                    # Adiciona os dados coletados à lista
-                    dados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
+                    # Adiciona os dados coletados à lista global
+                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
                 except Exception as e:
                     print(f"Erro ao processar linha: {e}")
 
-        # Salvar os dados coletados em um arquivo Excel
-        nome_arquivo = f"dados_completos_{qt}.xlsx"
-        df = pd.DataFrame(dados, columns=["Setor", "ID", "Nome", "Limite de Folhas", "Qtd Impressa"])
+    except Exception as e:
+        print(f"Erro ao coletar os dados: {e}")
+
+# Função para salvar todos os dados em um único arquivo Excel
+def salvar_dados_em_excel(nome_arquivo="dados_completos.xlsx"):
+    try:
+        df = pd.DataFrame(dados_acumulados, columns=["Setor", "ID", "Nome", "Limite de Folhas", "Qtd Impressa"])
         df.to_excel(nome_arquivo, index=False)
         print(f"Dados salvos em '{nome_arquivo}'.")
     except Exception as e:
-        print(f"Erro ao coletar os dados: {e}")
+        print(f"Erro ao salvar os dados: {e}")
 
 
 def iniciar_automacao(botao, progress_var):
@@ -131,6 +138,7 @@ def iniciar_automacao(botao, progress_var):
         progress_var.set(100 * (index / len(ips)))
     
     messagebox.showinfo("Concluído", "Automação finalizada com sucesso!")
+    salvar_dados_em_excel()
     botao.config(text="Iniciar Automação", state="normal")
     progress_var.set(0)
 
