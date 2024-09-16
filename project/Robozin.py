@@ -50,18 +50,19 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
                 try:
                     colunas = linha.find_elements(By.TAG_NAME, "td")
 
-                    lock_num = colunas[0].text
-                    lock_name = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "lockName"))).get_attribute("value")
-                    page_limit_max = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "lockPageLimitMax"))).get_attribute("value")
-                    last_td_value = colunas[6].text
+                    lock_num = colunas[0].text.strip()  # ID do usuário
+                    lock_name = colunas[1].find_element(By.CSS_SELECTOR, "input").get_attribute("value").strip()  # Nome do usuário
+                    page_limit_max = colunas[5].find_element(By.CSS_SELECTOR, "input").get_attribute("value").strip()  # Limite máximo de páginas
+                    last_td_value = colunas[6].text.strip()  # Contador de páginas
 
-                    if lock_name.strip() == "":
+                    if lock_name == "":
                         continue
 
+                    # Adiciona os dados coletados à lista
                     dados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
                 except Exception as e:
                     print(f"Erro ao processar linha: {e}")
-
+        
         else:
             tabela = wait.until(EC.presence_of_element_located((By.ID, "lock")))
             linhas = tabela.find_elements(By.CSS_SELECTOR, "tbody tr")
@@ -69,24 +70,27 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
             for linha in linhas:
                 try:
                     colunas = linha.find_elements(By.TAG_NAME, "td")
-                    lock_num = colunas[0].find_element(By.TAG_NAME, "label").text
-                    lock_name = colunas[1].find_element(By.CSS_SELECTOR, "input.lockName").get_attribute("value")
-                    page_limit_max = colunas[5].find_element(By.CSS_SELECTOR, "input.lockPageLimitMax").get_attribute("value")
-                    last_td_value = colunas[6].text
+                    lock_num = colunas[0].find_element(By.TAG_NAME, "label").text.strip()  # ID do usuário
+                    lock_name = colunas[1].find_element(By.CSS_SELECTOR, "input.lockName").get_attribute("value").strip()  # Nome do usuário
+                    page_limit_max = colunas[5].find_element(By.CSS_SELECTOR, "input.lockPageLimitMax").get_attribute("value").strip()  # Limite máximo de páginas
+                    last_td_value = colunas[6].text.strip()  # Contador de páginas
 
-                    if lock_name.strip() == "":
+                    if lock_name == "":
                         continue
 
+                    # Adiciona os dados coletados à lista
                     dados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
                 except Exception as e:
                     print(f"Erro ao processar linha: {e}")
 
+        # Salvar os dados coletados em um arquivo Excel
         nome_arquivo = f"dados_completos_{qt}.xlsx"
         df = pd.DataFrame(dados, columns=["Setor", "ID", "Nome", "Limite de Folhas", "Qtd Impressa"])
         df.to_excel(nome_arquivo, index=False)
         print(f"Dados salvos em '{nome_arquivo}'.")
     except Exception as e:
         print(f"Erro ao coletar os dados: {e}")
+
 
 def iniciar_automacao(botao, progress_var):
     botao.config(text="Processando...", state="disabled")
