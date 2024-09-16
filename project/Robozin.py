@@ -52,8 +52,8 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
 
                     lock_num = colunas[0].text.strip()  # ID do usuário
                     lock_name = colunas[1].find_element(By.CSS_SELECTOR, "input").get_attribute("value").strip()  # Nome do usuário
-                    page_limit_max = colunas[5].find_element(By.CSS_SELECTOR, "input").get_attribute("value").strip()  # Limite máximo de páginas
-                    last_td_value = colunas[6].text.strip()  # Contador de páginas
+                    page_limit_max = colunas[12].find_element(By.CSS_SELECTOR, "input").get_attribute("value").strip()  # Limite máximo de páginas
+                    last_td_value = colunas[13].text.strip()  # Contador de páginas
 
                     if lock_name == "":
                         continue
