@@ -89,6 +89,7 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
     except Exception as e:
         print(f"Erro ao coletar os dados: {e}")
 
+
 # Função para salvar todos os dados em um único arquivo Excel
 def salvar_dados_em_excel(nome_arquivo="dados_completos.xlsx"):
     try:
@@ -98,6 +99,13 @@ def salvar_dados_em_excel(nome_arquivo="dados_completos.xlsx"):
     except Exception as e:
         print(f"Erro ao salvar os dados: {e}")
 
+
+#def contar_linhas_na_tabela(driver):
+    # Implementar a lógica para contar as linhas na tabela
+    # Por exemplo:
+    # tabela = driver.find_element_by_id("id_da_tabela")  # Substitua pelo ID ou outro seletor da tabela
+    # linhas = tabela.find_elements_by_tag_name("tr")
+    # return len(linhas) - 1  # Subtrair 1 se a primeira linha for o cabeçalho
 
 def iniciar_automacao(botao, progress_var):
     botao.config(text="Processando...", state="disabled")
@@ -127,6 +135,10 @@ def iniciar_automacao(botao, progress_var):
         
         if tipo_impressora:
             coletar_dados(driver, qt, setor, tipo_impressora)
+            if setor =="ShowRoom":
+                controle_link = driver.find_element(By.LINK_TEXT, "Restricted Functions 26-50")
+                controle_link.click()
+                coletar_dados(driver, qt, setor, tipo_impressora)
         else:
             print(f"Tipo de impressora não encontrado para o IP {ip}")
         
@@ -145,6 +157,7 @@ def iniciar_automacao(botao, progress_var):
 def iniciar_botao(botao, progress_var):
     try:
         iniciar_automacao(botao, progress_var)
+        dados_acumulados = []
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
         botao.config(text="Iniciar Automação", state="normal")
