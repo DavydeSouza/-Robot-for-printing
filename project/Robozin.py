@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import pandas as pd
 import time
+import pyodbc
 from PIL import Image, ImageTk
 from config import executar_stored_procedure, obter_ips_do_banco, obter_setor_por_ip ,obter_tipo_impressora_por_ip # Importando a função do arquivo de banco de dados
 from selenium.webdriver.common.by import By
@@ -107,10 +108,61 @@ def salvar_dados_em_excel(nome_arquivo="dados_completos.xlsx"):
     # linhas = tabela.find_elements_by_tag_name("tr")
     # return len(linhas) - 1  # Subtrair 1 se a primeira linha for o cabeçalho
 
+import pyodbc
+import pandas as pd
+from tkinter import Tk
+from tkinter import filedialog
+from datetime import datetime
+
+# Função para abrir a janela de seleção de arquivo
+def selecionar_arquivo():
+    Tk().withdraw()  # Para ocultar a janela principal do Tkinter
+    arquivo = filedialog.askopenfilename(title="Selecione o arquivo", 
+                                         filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")])
+    return arquivo
+
+# Função para importar os dados e inserir na tabela através da Stored Procedure
+def importar_dados():
+    # Selecionar o arquivo usando a janela
+    arquivo = selecionar_arquivo()
+    
+    # Verificar o tipo do arquivo
+    if arquivo.endswith('.xlsx'):
+        df = pd.read_excel(arquivo)
+    elif arquivo.endswith('.csv'):
+        df = pd.read_csv(arquivo)
+    else:
+        raise ValueError("Tipo de arquivo não suportado. Use Excel (.xlsx) ou CSV (.csv)")
+    
+    # Conectar ao SQL Server
+    conn = pyodbc.connect(
+        'DRIVER={SQL Server};'
+        'SERVER=10.10.13.250;'
+        'DATABASE=Impressora;'
+        'UID=netazzurra;'
+        'PWD=Azzurra@@2023'
+    )
+    cursor = conn.cursor()
+
+    # Para cada linha no DataFrame, chamamos a Stored Procedure para inserir os dados
+    for index, row in df.iterrows():
+        cursor.execute("""
+            EXEC pins_dados ?, ?, ?, ?, ?
+        """, 
+        row['Setor'], row['Nome'], row['Limite de Folhas'], row['Qtd Impressa'], datetime.now())
+
+    conn.commit()  # Salva as mudanças no banco de dados
+    conn.close()
+    messagebox.showinfo("Concluído", "Dados importados com sucesso")
+
+    print("Dados importados com sucesso!")
+
+# Chamar a função de importação
+
 def iniciar_automacao(botao, progress_var):
     botao.config(text="Processando...", state="disabled")
     progress_var.set(10)
-    
+    dados_acumulados =[]
     senha = 'initpass'
     ips = obter_ips_do_banco()
     
@@ -157,14 +209,22 @@ def iniciar_automacao(botao, progress_var):
 def iniciar_botao(botao, progress_var):
     try:
         iniciar_automacao(botao, progress_var)
-        dados_acumulados = []
+        
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
         botao.config(text="Iniciar Automação", state="normal")
 
+def iniciar_dados(botao):
+    try:
+        importar_dados()
+    except Exception as e:
+        messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
+        botao.config(text="Importar Dados", state="normal")
+
+
 # Criar a interface gráfica com tkinter
 root = tk.Tk()
-root.title("Automação Impressora")
+root.title("RobImp")
 
 # Configurar o tamanho da janela e impedir o redimensionamento
 root.geometry("400x300")
@@ -188,9 +248,9 @@ progress_var = tk.DoubleVar()
 
 # Criar o botão "Iniciar Automação" sobre o canvas
 botao_iniciar = ttk.Button(root, text="Iniciar Automação", command=lambda: iniciar_botao(botao_iniciar, progress_var), width=20)
-
+botao_importar = ttk.Button(root, text="Importar Dados", command=lambda: iniciar_dados(botao_importar), width=20)
 # Adicionar o botão ao canvas em uma posição visível
-canvas.create_window(200, 250, anchor="center", window=botao_iniciar)
-
+canvas.create_window(100, 250, anchor="center", window=botao_iniciar)
+canvas.create_window(300, 250, anchor="center", window=botao_importar)
 # Executar o loop principal do tkinter
 root.mainloop()
