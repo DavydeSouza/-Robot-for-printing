@@ -7,10 +7,13 @@ import pandas as pd
 import time
 import pyodbc
 from PIL import Image, ImageTk
-from config import executar_stored_procedure, obter_ips_do_banco, obter_setor_por_ip ,obter_tipo_impressora_por_ip # Importando a função do arquivo de banco de dados
+from config import executar_stored_procedure, obter_ips_do_banco, obter_setor_por_ip ,obter_tipo_impressora_por_ip,obter_loja_por_ip # Importando a função do arquivo de banco de dados
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from tkinter import Tk
+from tkinter import filedialog
+from datetime import datetime
 
 dados_acumulados = []
 
@@ -42,7 +45,7 @@ def acessar_pagina_controle(driver):
     controle_link.click()
     time.sleep(5)
 
-def coletar_dados(driver, qt, setor, tipo_impressora):
+def coletar_dados(driver, qt, setor, tipo_impressora,loja):
     try:
         wait = WebDriverWait(driver, 10)  # Espera de até 10 segundos
 
@@ -63,7 +66,7 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
                         continue
 
                     # Adiciona os dados coletados à lista global
-                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
+                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value,loja])
                 except Exception as e:
                     print(f"Erro ao processar linha: {e}")
         
@@ -83,7 +86,7 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
                         continue
 
                     # Adiciona os dados coletados à lista global
-                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value])
+                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value,loja])
                 except Exception as e:
                     print(f"Erro ao processar linha: {e}")
 
@@ -94,7 +97,7 @@ def coletar_dados(driver, qt, setor, tipo_impressora):
 # Função para salvar todos os dados em um único arquivo Excel
 def salvar_dados_em_excel(nome_arquivo="dados_completos.xlsx"):
     try:
-        df = pd.DataFrame(dados_acumulados, columns=["Setor", "ID", "Nome", "Limite de Folhas", "Qtd Impressa"])
+        df = pd.DataFrame(dados_acumulados, columns=["Setor", "ID", "Nome", "Limite de Folhas", "Qtd Impressa","Loja"])
         df.to_excel(nome_arquivo, index=False)
         print(f"Dados salvos em '{nome_arquivo}'.")
     except Exception as e:
@@ -108,11 +111,6 @@ def salvar_dados_em_excel(nome_arquivo="dados_completos.xlsx"):
     # linhas = tabela.find_elements_by_tag_name("tr")
     # return len(linhas) - 1  # Subtrair 1 se a primeira linha for o cabeçalho
 
-import pyodbc
-import pandas as pd
-from tkinter import Tk
-from tkinter import filedialog
-from datetime import datetime
 
 # Função para abrir a janela de seleção de arquivo
 def selecionar_arquivo():
@@ -147,9 +145,9 @@ def importar_dados():
     # Para cada linha no DataFrame, chamamos a Stored Procedure para inserir os dados
     for index, row in df.iterrows():
         cursor.execute("""
-            EXEC pins_dados ?, ?, ?, ?, ?
+            EXEC pins_dados ?, ?, ?, ?, ?, ?
         """, 
-        row['Setor'], row['Nome'], row['Limite de Folhas'], row['Qtd Impressa'], datetime.now())
+        row['Setor'], row['Nome'], row['Limite de Folhas'], row['Qtd Impressa'], datetime.now(),row['Loja'])
 
     conn.commit()  # Salva as mudanças no banco de dados
     conn.close()
@@ -183,14 +181,17 @@ def iniciar_automacao(botao, progress_var):
         acessar_pagina_controle(driver)
         
         setor = obter_setor_por_ip(ip)
-        tipo_impressora = obter_tipo_impressora_por_ip(ip)  # Obter o tipo da impressora
+        tipo_impressora = obter_tipo_impressora_por_ip(ip)
+        loja = obter_loja_por_ip(ip)  # Obter o tipo da impressora
         
         if tipo_impressora:
-            coletar_dados(driver, qt, setor, tipo_impressora)
+            coletar_dados(driver, qt, setor, tipo_impressora,loja)
             if setor =="ShowRoom":
                 controle_link = driver.find_element(By.LINK_TEXT, "Restricted Functions 26-50")
                 controle_link.click()
-                coletar_dados(driver, qt, setor, tipo_impressora)
+                coletar_dados(driver, qt, setor, tipo_impressora,loja
+                
+                )
         else:
             print(f"Tipo de impressora não encontrado para o IP {ip}")
         

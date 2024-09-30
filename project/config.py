@@ -92,3 +92,29 @@ def obter_tipo_impressora_por_ip(ip):
     except Exception as e:
         print(f"Erro ao obter o tipo da impressora: {e}")
         return None
+
+def obter_loja_por_ip(ip):
+    conn_str = (
+        'DRIVER={SQL Server};'
+        'SERVER=10.10.13.250;'
+        'DATABASE=Impressora;'
+        'UID=netazzurra;'
+        'PWD=Azzurra@@2023'
+    )
+    
+    local = None
+    try:
+        # Conectar ao banco de dados
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                # Executar a stored procedure e capturar o resultado
+                cursor.execute("{CALL pcons_loja (?)}", (ip,))
+                local = cursor.fetchone()  # Obter o resultado
+                
+                if local:
+                    local = local[0]  # Ajuste conforme o formato do resultado
+                print(f"Loja obtida para IP {ip}: {local}")
+                
+    except pyodbc.Error as e:
+        print(f"Erro ao obter o setor: {e}")
+    return local
