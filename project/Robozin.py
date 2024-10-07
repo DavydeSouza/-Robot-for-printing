@@ -45,6 +45,10 @@ def acessar_pagina_controle(driver):
     controle_link.click()
     time.sleep(5)
 
+def reseta_contador(driver):
+    driver.find_element(By.XPATH, "//input[@value='All Counter Reset']").click()
+    driver.find_element(By.XPATH, "//input[@value='Submit']").click()
+
 def coletar_dados(driver, qt, setor, tipo_impressora,loja):
     try:
         wait = WebDriverWait(driver, 10)  # Espera de até 10 segundos
@@ -87,6 +91,7 @@ def coletar_dados(driver, qt, setor, tipo_impressora,loja):
 
                     # Adiciona os dados coletados à lista global
                     dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value,loja])
+
                 except Exception as e:
                     print(f"Erro ao processar linha: {e}")
 
@@ -186,12 +191,13 @@ def iniciar_automacao(botao, progress_var):
         
         if tipo_impressora:
             coletar_dados(driver, qt, setor, tipo_impressora,loja)
+            reseta_contador(driver)
             if setor =="ShowRoom":
                 controle_link = driver.find_element(By.LINK_TEXT, "Restricted Functions 26-50")
                 controle_link.click()
-                coletar_dados(driver, qt, setor, tipo_impressora,loja
-                
-                )
+                coletar_dados(driver, qt, setor, tipo_impressora,loja)
+                reseta_contador(driver)
+
         else:
             print(f"Tipo de impressora não encontrado para o IP {ip}")
         
@@ -223,6 +229,9 @@ def iniciar_dados(botao):
         botao.config(text="Importar Dados", state="normal")
 
 
+def on_closing():
+    root.destroy()
+    
 # Criar a interface gráfica com tkinter
 root = tk.Tk()
 root.title("RobImp")
@@ -232,16 +241,16 @@ root.geometry("400x300")
 root.resizable(False, False)
 
 # Carregar a imagem de fundo
-imagem_fundo = Image.open(r"C:/Users/Davy/Downloads/ImpZin.png")  # Certifique-se que o caminho da imagem está correto
-imagem_fundo = imagem_fundo.resize((400, 300), Image.LANCZOS) # Redimensionar a imagem para 400x300
-imagem_fundo = ImageTk.PhotoImage(imagem_fundo)
+#imagem_fundo = Image.open(r"C:/Users/Davy/Downloads/ImpZin.png")  # Certifique-se que o caminho da imagem está correto
+#imagem_fundo = imagem_fundo.resize((400, 300), Image.LANCZOS) # Redimensionar a imagem para 400x300
+#imagem_fundo = ImageTk.PhotoImage(imagem_fundo)
 
 # Criar um canvas onde a imagem de fundo será desenhada
 canvas = Canvas(root, width=400, height=300)
 canvas.pack(fill="both", expand=True)
 
 # Adicionar a imagem de fundo ao canvas
-canvas.create_image(0, 0, anchor="nw", image=imagem_fundo)
+# canvas.create_image(0, 0, anchor="nw", image=imagem_fundo)
 
 # Variável para a barra de progresso
 progress_var = tk.DoubleVar()
@@ -253,5 +262,8 @@ botao_importar = ttk.Button(root, text="Importar Dados", command=lambda: iniciar
 # Adicionar o botão ao canvas em uma posição visível
 canvas.create_window(100, 250, anchor="center", window=botao_iniciar)
 canvas.create_window(300, 250, anchor="center", window=botao_importar)
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
 # Executar o loop principal do tkinter
 root.mainloop()
