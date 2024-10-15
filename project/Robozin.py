@@ -49,10 +49,11 @@ def reseta_contador(driver):
     driver.find_element(By.XPATH, "//input[@value='All Counter Reset']").click()
     driver.find_element(By.XPATH, "//input[@value='Submit']").click()
 
-def coletar_dados(driver, qt, setor, tipo_impressora,loja):
+def coletar_dados(driver, qt, setor, tipo_impressora, loja):
     try:
         wait = WebDriverWait(driver, 10)  # Espera de até 10 segundos
-
+        
+        # Coletando dados para impressora Multifuncional
         if tipo_impressora == 'Multifuncional':
             tabela = wait.until(EC.presence_of_element_located((By.ID, "lock")))  # Aguarda a tabela aparecer
             linhas = tabela.find_elements(By.CSS_SELECTOR, "tbody tr")
@@ -70,10 +71,33 @@ def coletar_dados(driver, qt, setor, tipo_impressora,loja):
                         continue
 
                     # Adiciona os dados coletados à lista global
-                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value,loja])
+                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value, loja])
                 except Exception as e:
-                    print(f"Erro ao processar linha: {e}")
-        
+                    print(f"Erro ao processar linha (Multifuncional): {e}")
+
+        # Coletando dados para impressora Multifuncional/Colorida
+        elif tipo_impressora == 'Multifuncional/Colorida':
+            tabela = wait.until(EC.presence_of_element_located((By.ID, "lock")))
+            linhas = tabela.find_elements(By.CSS_SELECTOR, "tbody tr")
+
+            for linha in linhas:
+                try:
+                    colunas = linha.find_elements(By.TAG_NAME, "td")
+                    lock_num = colunas[0].find_element(By.TAG_NAME, "label").text.strip()  # ID do usuário
+                    lock_name = colunas[1].find_element(By.CSS_SELECTOR, "input.lockName").get_attribute("value").strip()  # Nome do usuário
+                    page_limit_max = colunas[14].find_element(By.CSS_SELECTOR, "input.lockPageLimitMax").get_attribute("value").strip()  # Limite máximo de páginas
+                    last_td_value = colunas[15].text.strip()  # Contador de páginas
+
+                    if lock_name == "":
+                        continue
+
+                    # Adiciona os dados coletados à lista global
+                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value, loja])
+
+                except Exception as e:
+                    print(f"Erro ao processar linha (Multifuncional/Colorida): {e}")
+
+        # Coletando dados para outros tipos de impressora
         else:
             tabela = wait.until(EC.presence_of_element_located((By.ID, "lock")))
             linhas = tabela.find_elements(By.CSS_SELECTOR, "tbody tr")
@@ -90,14 +114,13 @@ def coletar_dados(driver, qt, setor, tipo_impressora,loja):
                         continue
 
                     # Adiciona os dados coletados à lista global
-                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value,loja])
+                    dados_acumulados.append([setor, lock_num, lock_name, page_limit_max, last_td_value, loja])
 
                 except Exception as e:
-                    print(f"Erro ao processar linha: {e}")
+                    print(f"Erro ao processar linha (Outro tipo): {e}")
 
     except Exception as e:
         print(f"Erro ao coletar os dados: {e}")
-
 
 # Função para salvar todos os dados em um único arquivo Excel
 def salvar_dados_em_excel(nome_arquivo="dados_completos.xlsx"):
