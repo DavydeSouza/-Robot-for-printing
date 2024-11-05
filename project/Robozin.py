@@ -14,6 +14,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from tkinter import Tk
 from tkinter import filedialog
 from datetime import datetime
+import threading
 
 dados_acumulados = []
 
@@ -237,8 +238,10 @@ def iniciar_automacao(botao, progress_var):
     progress_var.set(0)
 
 def iniciar_botao(botao, progress_var):
+    
     try:
-        iniciar_automacao(botao, progress_var)
+        thread = threading.Thread(target=iniciar_automacao, args=(botao, progress_var))
+        thread.start()
         
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
@@ -255,38 +258,57 @@ def iniciar_dados(botao):
 def on_closing():
     root.destroy()
     
-# Criar a interface gráfica com tkinter
 root = tk.Tk()
-root.title("RobImp")
-
-# Configurar o tamanho da janela e impedir o redimensionamento
-root.geometry("400x300")
+root.title("Automoção de dados")
 root.resizable(False, False)
 
-# Carregar a imagem de fundo
-#imagem_fundo = Image.open(r"C:/Users/Davy/Downloads/ImpZin.png")  # Certifique-se que o caminho da imagem está correto
-#imagem_fundo = imagem_fundo.resize((400, 300), Image.LANCZOS) # Redimensionar a imagem para 400x300
-#imagem_fundo = ImageTk.PhotoImage(imagem_fundo)
+# Definir um tema moderno
+style = ttk.Style(root)
+style.theme_use("clam")
 
-# Criar um canvas onde a imagem de fundo será desenhada
-canvas = Canvas(root, width=400, height=300)
+window_width = 400
+window_height = 350
+
+# Obter a largura e altura da tela
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+
+# Calcular a posição do canto superior esquerdo para centralizar a janela
+x_cordinate = int((screen_width / 2) - (window_width / 2))
+y_cordinate = int((screen_height / 2) - (window_height / 2))
+
+root.geometry(f"{window_width}x{window_height}+{x_cordinate}+{y_cordinate}")
+
+
+# Configurar estilos personalizados para botões
+style.configure("TButton", font=("Helvetica", 10), padding=6, relief="flat", background="#4A90E2", foreground="white")
+style.map("TButton", background=[("active", "#357ABD")])
+
+# Carregar e redimensionar a imagem de fundo
+imagem_fundo = Image.open(r"assets/Impressora.png")
+imagem_fundo = imagem_fundo.resize((300, 200), Image.LANCZOS)
+imagem_fundo = ImageTk.PhotoImage(imagem_fundo)
+
+# Criar um canvas para a imagem de fundo
+canvas = tk.Canvas(root, width=400, height=300, highlightthickness=0, bg="#f0f0f0")
 canvas.pack(fill="both", expand=True)
 
 # Adicionar a imagem de fundo ao canvas
-# canvas.create_image(0, 0, anchor="nw", image=imagem_fundo)
+canvas.create_image(200, 125, anchor="center", image=imagem_fundo)
 
-# Variável para a barra de progresso
+# Variável e barra de progresso estilizada
 progress_var = tk.DoubleVar()
+progress_bar = ttk.Progressbar(root, variable=progress_var, maximum=100, style="TProgressbar")
+style.configure("TProgressbar", thickness=5)
 
-
-# Criar o botão "Iniciar Automação" sobre o canvas
+# Criar botões modernos
 botao_iniciar = ttk.Button(root, text="Iniciar Automação", command=lambda: iniciar_botao(botao_iniciar, progress_var), width=20)
 botao_importar = ttk.Button(root, text="Importar Dados", command=lambda: iniciar_dados(botao_importar), width=20)
-# Adicionar o botão ao canvas em uma posição visível
-canvas.create_window(100, 250, anchor="center", window=botao_iniciar)
-canvas.create_window(300, 250, anchor="center", window=botao_importar)
+
+# Adicionar elementos ao canvas com melhor posicionamento
+canvas.create_window(200, 250, anchor="center", window=progress_bar)
+canvas.create_window(115, 300, anchor="center", window=botao_iniciar)
+canvas.create_window(285, 300, anchor="center", window=botao_importar)
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
-
-# Executar o loop principal do tkinter
 root.mainloop()
